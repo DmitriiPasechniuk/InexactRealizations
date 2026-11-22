@@ -1,0 +1,40 @@
+import InexactRealizations.Channel.SignalBounds
+import InexactRealizations.Channel.FiniteNoiseRemainder
+
+namespace InexactRealizations.Channel
+noncomputable section
+open Polynomial MeasureTheory
+open scoped BigOperators
+variable {N : ℕ} {J : Type*} [Fintype J] [DecidableEq J]
+
+/-- A singleton finite-noise coefficient is exactly the corresponding actual T column. -/
+theorem finiteNoiseCoefficient_signal_column (h : InexactRealizations.History N) (lam : J → ℝ)
+    (a : EuclideanSpace ℝ J) (s : Fin N) (j : J) :
+    finiteNoiseCoefficient h (InexactRealizations.History.matrixEnd (Matrix.diagonal lam))
+      (fun _ => LinearMap.id) a {s.val} j=signalMatrix h lam a.ofLp j s := by
+  rw [finiteNoiseCoefficient_singleton]
+  simp only [LinearMap.id_apply, diagonal_polynomial_apply, signalMatrix, InexactRealizations.Lower.physicalKernel]
+  ring
+
+/-- Sum of the actual singleton coefficient energies is exactly the squared HS signal norm. -/
+theorem finiteNoiseCoefficient_signal_energy (h : InexactRealizations.History N) (lam : J → ℝ)
+    (a : EuclideanSpace ℝ J) :
+    (∑ s : Fin N, ‖finiteNoiseCoefficient h (InexactRealizations.History.matrixEnd (Matrix.diagonal lam))
+      (fun _ => LinearMap.id) a {s.val}‖^2)=rectangularHsSq (signalMatrix h lam a.ofLp) := by
+  simp only [EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs, finiteNoiseCoefficient_signal_column]
+  exact Finset.sum_comm
+
+/-- The full finite random channel has the exact leading HS variance and its actual remainder. -/
+theorem finiteSignOutput_signal_variance (h : InexactRealizations.History N) (lam : J → ℝ)
+    (a : EuclideanSpace ℝ J) (δ : ℝ) :
+    (∫ ω, ‖finiteSignOutput h (InexactRealizations.History.matrixEnd (Matrix.diagonal lam))
+      (fun _ => LinearMap.id) a δ ω-
+        (aeval (InexactRealizations.History.matrixEnd (Matrix.diagonal lam)) h.terminal) a‖^2
+          ∂InexactRealizations.Probability.Signs.law N)=
+      δ^2*rectangularHsSq (signalMatrix h lam a.ofLp)+
+        finiteNoiseRemainder h (InexactRealizations.History.matrixEnd (Matrix.diagonal lam))
+          (fun _ => LinearMap.id) a δ := by
+  rw [finiteSignOutput_variance_split, finiteNoiseCoefficient_signal_energy]
+
+end
+end InexactRealizations.Channel

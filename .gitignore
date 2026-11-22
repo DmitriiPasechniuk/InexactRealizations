@@ -1,0 +1,7 @@
+# Repository content: code/, lean/, README.md
+/*
+!/.gitignore
+!/README.md
+!/code/
+!/lean/
+lean/.lake/*
